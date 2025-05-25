@@ -160,8 +160,3 @@ Email: [your.email@example.com](mailto:your.email@example.com)
 LinkedIn: [https://www.linkedin.com/in/your-profile](https://www.linkedin.com/in/your-profile)
 
 ```
-
----
-
-Would you like me to generate a working repo with this README and base code, then push it to GitHub for you (or give you a downloadable ZIP)?
-```
