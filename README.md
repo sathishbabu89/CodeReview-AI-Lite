@@ -1,6 +1,3 @@
-Here's a full **GitHub `README.md` file** you can use for your **Code Review Assistant (Lite)** project. This covers setup steps, functionality, and future improvements.
-
----
 
 ```markdown
 # 🧠 Code Review Assistant (Lite)
