@@ -1,0 +1,110 @@
+Here's your updated code that replaces `codet5-small` with `deepseek-coder-1.3b-instruct`, optimized for efficient memory usage:
+
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+import torch
+import subprocess
+
+# Configure model loading for memory efficiency (choose one option)
+
+# Option 1: FP16 (Good balance between quality and memory)
+model_name = "deepseek-ai/deepseek-coder-1.3b-instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+
+# Option 2: 8-bit quantization (Better for lower VRAM GPUs)
+# quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+# model = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     quantization_config=quantization_config,
+#     device_map="auto"
+# )
+
+# Option 3: 4-bit quantization (Lowest memory usage)
+# quantization_config = BitsAndBytesConfig(
+#     load_in_4bit=True,
+#     bnb_4bit_compute_dtype=torch.float16,
+#     bnb_4bit_quant_type="nf4"
+# )
+# model = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     quantization_config=quantization_config,
+#     device_map="auto"
+# )
+
+def run_static_analysis(code_str):
+    with open("temp.py", "w") as f:
+        f.write(code_str)
+    result = subprocess.run(["pylint", "temp.py", "--disable=all", "--enable=C,R,E,W"], 
+                          capture_output=True, text=True)
+    return result.stdout
+
+def llm_suggestion(code_str):
+    # Create a more structured prompt for better responses
+    prompt = f"""Analyze the following Python code and suggest specific improvements.
+Focus on:
+1. Code readability
+2. Performance optimizations
+3. Python best practices
+4. Potential bugs
+
+Code:
+```python
+{code_str}
+```
+
+Suggestions:"""
+    
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True).to(model.device)
+    
+    # Generate more nuanced suggestions with adjusted parameters
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=256,  # Increased from 128 for more detailed suggestions
+        temperature=0.7,     # For slightly creative but focused suggestions
+        top_p=0.9,           # Better than top_k for code suggestions
+        do_sample=True,      # Enables temperature-based sampling
+        pad_token_id=tokenizer.eos_token_id
+    )
+    
+    # Clean up the output
+    full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Extract only the suggestions part (after "Suggestions:")
+    if "Suggestions:" in full_response:
+        return full_response.split("Suggestions:")[1].strip()
+    return full_response
+
+# Example usage
+if __name__ == "__main__":
+    sample_code = """
+def calculate_average(numbers):
+    sum = 0
+    for n in numbers:
+        sum += n
+    return sum / len(numbers)
+    """
+    
+    print("Static Analysis Results:")
+    print(run_static_analysis(sample_code))
+    
+    print("\nLLM Suggestions:")
+    print(llm_suggestion(sample_code))
+```
+
+Key improvements made:
+1. **Model Loading**: Added multiple loading options (FP16, 8-bit, 4-bit) for different hardware capabilities
+2. **Prompt Engineering**: Structured the prompt to get more focused code improvement suggestions
+3. **Generation Parameters**: Added temperature and top_p sampling for better quality suggestions
+4. **Output Processing**: Cleans up the response to focus on the suggestions
+5. **Device Handling**: Automatic device placement with `device_map="auto"`
+
+Choose the loading option that best matches your hardware:
+- Use **Option 1 (FP16)** if you have a GPU with at least 6GB VRAM
+- Use **Option 2 (8-bit)** if you have 4-6GB VRAM
+- Use **Option 3 (4-bit)** if you have very limited VRAM (2-4GB)
+
+The model will now provide more detailed and actionable code improvement suggestions while being more memory-efficient than the original V2 model you considered.
